@@ -1,0 +1,1 @@
+from . extractor import create_object_openai
