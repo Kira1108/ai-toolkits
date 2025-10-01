@@ -1,0 +1,9 @@
+numpy
+sentence-transformers
+llama_index
+llama-index-llms-ollama
+llama-index-llms-azure-openai
+llama-index-llms-openai-like
+llama-index-llms-openai
+instructor
+pydantic-ai
