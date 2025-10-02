@@ -1,3 +1,5 @@
+"""This example demonstrates how to inject external context (the player's name) into an agent's tools."""
+
 import random
 from ai_toolkits.llms.pydantic_provider.models import create_ollama_model
 from pydantic_ai import Agent, RunContext
@@ -19,7 +21,6 @@ def create_agent() -> Agent:
         """Roll a six-sided die and return the result."""
         print("Rolling the dice...")
         return str(random.randint(1, 6))
-
 
     @agent.tool  
     def get_player_name(ctx: RunContext[str]) -> str:
