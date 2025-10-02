@@ -1,7 +1,5 @@
 from llama_index.llms.azure_openai import AzureOpenAI 
-from dotenv import load_dotenv
-from pathlib import Path
-import os
+from ai_toolkits.load_env import load_environment, get_required_env_var
 
 class LlamaIndeAzureOpenAI(AzureOpenAI):
     
@@ -21,17 +19,15 @@ class LlamaIndeAzureOpenAI(AzureOpenAI):
             ValueError: If any of the required environment variables are missing.
         """
         
-        if env_path is None:
-            env_path = str(Path.home() / ".env")
-        
-        load_dotenv(env_path)
+        # Load environment variables using centralized configuration
+        load_environment(env_path)
 
-        api_version = os.getenv("OPENAI_API_VERSION", None)
-        api_key = os.getenv("AZURE_OPENAI_API_KEY", None)
-        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", None)
-
-        if not all([api_version, api_key, azure_endpoint]):
-            raise ValueError("Please set the OPENAI_API_VERSION, AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT environment variables in your .env file.")
+        try:
+            api_version = get_required_env_var("OPENAI_API_VERSION")
+            api_key = get_required_env_var("AZURE_OPENAI_API_KEY")
+            azure_endpoint = get_required_env_var("AZURE_OPENAI_ENDPOINT")
+        except ValueError as e:
+            raise ValueError(f"Missing required environment variables: {e}")
 
         return cls(
             api_version= api_version,

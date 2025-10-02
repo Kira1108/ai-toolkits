@@ -1,12 +1,12 @@
 from openai import AzureOpenAI, AsyncAzureOpenAI
-from dotenv import load_dotenv
-from pathlib import Path
-load_dotenv(str(Path.home() / ".env"))
+from ai_toolkits.load_env import load_environment
 
 def create_sync_client(*args, **kwargs):
+    load_environment()  
     return AzureOpenAI(*args, **kwargs)
 
 def create_async_client(*args, **kwargs):
+    load_environment()  
     return AsyncAzureOpenAI(*args, **kwargs)
 
 def test_openai_clients():
