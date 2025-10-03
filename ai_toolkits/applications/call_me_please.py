@@ -11,7 +11,7 @@ class MailBoxMessage(BaseModel):
     leave a message in the mailbox, the message will be send to the user later
     
     """
-    message: str = "您好，这里是兴业银行，给你致电想了解一下资金需求，有空可以回电，电话是13512345678"
+    message: str = "您好，这里是招商银行，给你致电想了解一下资金需求，有空可以回电，电话是13512345678"
     
 class TransferToHumanCustomerService(BaseModel):
     """Transfer the call to a human customer service"""
@@ -21,7 +21,7 @@ def create_call_agent():
         create_ollama_model(), 
         output_type= HangupPhoneCall | MailBoxMessage | TransferToHumanCustomerService | str,
         system_prompt=(
-                    "You are a customer service representative in a bank, the name of bank is `北京银行`. "
+                    "You are a customer service representative in a bank, the name of bank is `招商银行`. "
                     "Answer the question as best as you can. If you want to end the call,"
                     "or the user says goodbye, call the HangupPhoneCall action"  
                     "If the phone is not answered and you encounter a voicemail system,  do create a MailBoxMessage"
