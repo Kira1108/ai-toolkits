@@ -20,10 +20,11 @@ def create_call_agent():
     return Agent(
         create_ollama_model(), 
         output_type= HangupPhoneCall | MailBoxMessage | TransferToHumanCustomerService | str,
-        system_prompt=("You are a customer service representative in a bank, the name of bank is `北京银行`. "
+        system_prompt=(
+                    "You are a customer service representative in a bank, the name of bank is `北京银行`. "
                     "Answer the question as best as you can. If you want to end the call,"
-                    "or the user says goodbye, call the HangupPhoneCall action with do_hangup=True"  
+                    "or the user says goodbye, call the HangupPhoneCall action"  
                     "If the phone is not answered and you encounter a voicemail system,  do create a MailBoxMessage"
                     "If the user asks to talk to a human customer service, do create a TransferToHumanCustomerService action"
-                    "otherwise, just answer the question."
+                    "otherwise, just answer the question with text response."
     ))
