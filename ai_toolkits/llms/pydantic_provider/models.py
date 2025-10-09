@@ -1,12 +1,10 @@
 from openai import AsyncClient
-from pydantic_ai import Agent
-from pydantic_ai.models.openai import ModelSettings, OpenAIChatModel
-from pydantic_ai.providers.ollama import OllamaProvider
-from pydantic_ai.providers.openai import OpenAIProvider
 
-
-def create_ollama_model(model_name:str = 'gpt-oss:20b') -> OpenAIChatModel:
+def create_ollama_model(model_name: str = 'gpt-oss:20b'):
     """Create and return an OpenAIChatModel configured to use the Ollama provider."""
+    from pydantic_ai.models.openai import OpenAIChatModel
+    from pydantic_ai.providers.ollama import OllamaProvider
+    
     return OpenAIChatModel(
         model_name=model_name,
         provider=OllamaProvider(base_url='http://localhost:11434/v1'),
@@ -23,6 +21,8 @@ def create_openai_like(
     Create openai like pydantic-compatible model.
     Tested with sglang deployed models
     """
+    from pydantic_ai.models.openai import ModelSettings, OpenAIChatModel
+    from pydantic_ai.providers.openai import OpenAIProvider
     
     client_args = {
         "api_key": api_key,
