@@ -30,7 +30,32 @@ async def real_time_transcribe():
     send_task = asyncio.create_task(asr_client.send_audio())
     receive_task = asyncio.create_task(asr_client.receive_results())
     consume_task = asyncio.create_task(consume_text_queue(text_output_queue))
+
     logging.info("Starting the workflow...")
-    await asyncio.gather(record_task, send_task, receive_task, consume_task)
+
+    tasks = {record_task, send_task, receive_task, consume_task}
+    # Wait until the first exception occurs (or all tasks complete)
+    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+
+    # If any completed task raised, cancel the rest and re-raise the exception
+    first_exc = None
+    for t in done:
+        exc = t.exception()
+        if exc is not None:
+            first_exc = exc
+            logging.exception("A task raised an exception, cancelling remaining tasks.")
+            break
+
+    # Cancel pending tasks
+    for p in pending:
+        p.cancel()
+
+    # Ensure all pending tasks are awaited to suppress warnings; collect results/exceptions
+    await asyncio.gather(*pending, return_exceptions=True)
+
+    # If there was an exception, re-raise it so callers can handle it
+    if first_exc:
+        raise first_exc
+
     await asyncio.sleep(0.1)
     print("Workflow completed.")

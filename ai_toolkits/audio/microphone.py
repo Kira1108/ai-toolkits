@@ -30,7 +30,9 @@ class MicrophoneClient:
         start = asyncio.get_event_loop().time()
         while self.stream.is_active():
             if asyncio.get_event_loop().time() - start > self.duration:
+                print("Recording duration reached, stopping.")
                 await self.audio_input_queue.put(json.dumps({"type": "end"}))
+                await asyncio.sleep(5)
                 break
             data = self.stream.read(self.chunk_size, exception_on_overflow=False)
             await self.audio_input_queue.put(data)

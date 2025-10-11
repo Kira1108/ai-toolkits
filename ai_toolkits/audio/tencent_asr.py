@@ -18,6 +18,7 @@ import websockets
 from pydantic import BaseModel, Field
 import os
 from ai_toolkits.load_env import get_env_var
+
 BASE_URL = get_env_var("TENCENT_ASR_BASE_URL") 
 PART_URL = get_env_var("TENCENT_ASR_PART_URL") 
 SECRET_KEY = get_env_var("TENCENT_ASR_SECRET_KEY")
@@ -98,7 +99,7 @@ class TencentASR:
         self.text_output_queue = text_output_queue if text_output_queue is not None else asyncio.Queue()
 
         self.websocket = None
-        
+        self.connected = False
     
     async def connect(self):
         self.logger.info(f"Connecting to ASR WebSocket at {self.websocket_url}")
@@ -107,6 +108,7 @@ class TencentASR:
         if json.loads(auth_response).get('code') != 0:
             raise ConnectionError(f"ASR connection failed: {auth_response}")
         self.logger.info("ASR WebSocket connection successful.")
+        self.connected = True
         
     async def send_audio(self):
         while True:
