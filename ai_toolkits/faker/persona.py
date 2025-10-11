@@ -283,7 +283,7 @@ class OpenAIChatter:
         
     def greeting(self):
         return self.client.chat.completions.create(
-            model = 'gpt-4o',
+            model = 'gpt-4.1',
             messages= self.messages + [{'role':"user", "content":"First, generate a greeting message to start a conversation."}],
         ).choices[0].message.content
     
@@ -293,16 +293,30 @@ class OpenAIChatter:
     def add_assistant_message(self, message:str):
         self.messages.append({'role':"assistant", "content": message})
         
+        
+    def _retry_chat(self, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    print(f"Retrying chat, attempt {attempt+1}...")
+                response = self.client.chat.completions.create(
+                    model = 'gpt-4.1',
+                    messages= self.messages,
+                )
+                if response.choices[0].message.content:
+                    return response
+                
+                raise ValueError("Empty response content")
+            except Exception as e:
+                print(f"Chat attempt {attempt+1} failed: {e}")
+        raise RuntimeError("Max retries exceeded for chat.")
+    
     def chat(self, message:str = None):
         self.add_user_message(message)
-        content = self.client.chat.completions.create(
-            model = 'gpt-4o',
-            messages= self.messages,
-        ).choices[0].message.content
-        self.add_assistant_message(content)
+        response = self._retry_chat()
+        content = response.choices[0].message.content
         
-        if content is None:
-            raise ValueError("No response from the model")
+        self.add_assistant_message(content)
         return content
     
     
@@ -340,5 +354,8 @@ class ConversationSimulator:
             print(f"{self.persona2.name} (B):", reply2)
 
             if "再见" in reply1 or "再见" in reply2:
+                print("Conversation ended.")
+                break
+            if "拜拜" in reply1 or "拜拜" in reply2:
                 print("Conversation ended.")
                 break
