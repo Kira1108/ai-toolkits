@@ -53,6 +53,8 @@ async def real_time_transcribe():
     # Ensure all pending tasks are awaited to suppress warnings; collect results/exceptions
     await asyncio.gather(*pending, return_exceptions=True)
 
+    await asr_client.disconnect()
+
     # If there was an exception, re-raise it so callers can handle it
     if first_exc:
         raise first_exc

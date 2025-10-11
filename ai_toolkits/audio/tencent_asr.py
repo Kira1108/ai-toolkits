@@ -99,7 +99,6 @@ class TencentASR:
         self.text_output_queue = text_output_queue if text_output_queue is not None else asyncio.Queue()
 
         self.websocket = None
-        self.connected = False
     
     async def connect(self):
         self.logger.info(f"Connecting to ASR WebSocket at {self.websocket_url}")
@@ -108,7 +107,11 @@ class TencentASR:
         if json.loads(auth_response).get('code') != 0:
             raise ConnectionError(f"ASR connection failed: {auth_response}")
         self.logger.info("ASR WebSocket connection successful.")
-        self.connected = True
+        
+    async def disconnect(self):
+        if self.websocket:
+            await self.websocket.close()
+            self.logger.info("ASR WebSocket connection closed.")
         
     async def send_audio(self):
         while True:
@@ -139,13 +142,3 @@ class TencentASR:
             if asr_response.is_final:
                 self.logger.info("Final result received, ending ASR session.")
                 break
-            
-    async def run(self):
-        await self.connect()
-        send_task = asyncio.create_task(self.send_audio())
-        receive_task = asyncio.create_task(self.receive_results())
-        
-        await asyncio.gather(send_task, receive_task)
-        
-        await self.websocket.close()
-        self.logger.info("ASR WebSocket connection closed.")
