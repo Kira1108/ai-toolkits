@@ -8,3 +8,4 @@ llama-index-llms-openai
 instructor
 pydantic-ai
 pymilvus
+PyAudio
