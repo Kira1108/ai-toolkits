@@ -112,7 +112,7 @@ def _build_api_url(vad_silence: int = 1000) -> str:
         "engine_model_type=8k_zh",
         "needvad=1",
         f"timestamp={int(time.time())}",
-        f"vad_silence={vad_silence}",
+        f"vad_silence_time={vad_silence}",
         f"secretid={SECRET_ID}",
         f"expired={int((datetime.now() + timedelta(days=1)).timestamp())}",
         f"voice_id={_generate_unique_id()}",

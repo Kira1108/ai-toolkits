@@ -1,4 +1,5 @@
 from ai_toolkits.audio.real_time import RealTimeTask
+from ai_toolkits.audio.tencent_asr import TencentASR
 from ai_toolkits.audio.microphone import MicrophoneClient
 from ai_toolkits.audio.text_processor import (
     TranslateTextHandler, 
@@ -43,11 +44,13 @@ def create_streaming_conversation_bot(
     if system_prmopt is None:
         system_prmopt = "You are a helpful assistant, You provide concise and colloquial style answers."
         
+    
     conversation_handler = ConversationStreamHandler(system_prompt=system_prmopt)
     
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=duration_seconds),
-        text_handler=conversation_handler
+        text_handler=conversation_handler,
+        stt_service=TencentASR(vad_silence=1800)
     )
     return task
 
