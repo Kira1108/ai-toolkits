@@ -10,4 +10,10 @@ setup(name='ai_toolkits',
       description='AI toolkits for LLM integrations and structured data extraction',
       author='The fastest man alive.',
       packages=find_packages(),
-      install_requires=read_requirements())
+      install_requires=read_requirements(),
+      entry_points={ 
+            'console_scripts': [
+                'gotalk=ai_toolkits.audio.cli:cli',
+            ],
+        }
+      )

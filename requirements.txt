@@ -9,3 +9,4 @@ instructor
 pydantic-ai
 pymilvus
 PyAudio
+click
