@@ -85,9 +85,13 @@ class ConversationStreamHandler(BaseTextHandler):
         self.turns = 0
         
     async def do_process(self, text: str) -> str:
-        sep = f" Turn {self.turns + 1} "
-        print(sep.center(80, "="))
-        print(f"😏: {text}")
+        # Simpler, beautiful turn separator
+        turn_num = self.turns + 1
+        sep = f"🟦 Turn {turn_num} 🟦"
+        print(f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
+        print(f"┃ {sep.center(42)} ┃")
+        print(f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
+        print(f"😏 User: {text}")
         self.conversation_history.append({"role": "user", "content": text})
         try:
             # Try streaming if supported by the client
@@ -96,7 +100,7 @@ class ConversationStreamHandler(BaseTextHandler):
                 messages=self.conversation_history,
                 stream=True,
             )
-            print("🤖: ", end="", flush=True)
+            print("🤖 Assistant: ", end="", flush=True)
             buffer = ""
             async for chunk in stream:
                 if hasattr(chunk, "choices") and len(chunk.choices) > 0:
