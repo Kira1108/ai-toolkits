@@ -1,6 +1,9 @@
-from ai_toolkits.audio.transcribe import real_time_transcribe   
+import logging
+logging.basicConfig(level=logging.INFO)
+from ai_toolkits.audio.transcribe import RealTimeTask
 import asyncio
 
 
 if __name__ == "__main__": 
-    asyncio.run(real_time_transcribe())
+    task = RealTimeTask()
+    asyncio.run(task.run())

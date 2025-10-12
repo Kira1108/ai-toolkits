@@ -138,7 +138,7 @@ class TencentASR:
     def __init__(self, 
                  audio_input_queue: Optional[asyncio.Queue] = None,
                  text_output_queue: Optional[asyncio.Queue] = None,
-                 vad_silence: int = 1000):
+                 vad_silence: int = 500):
         """
         Initialize Tencent ASR client.
         
@@ -161,6 +161,14 @@ class TencentASR:
         # Synchronization primitives
         self._final_result_received = asyncio.Event()
         self._end_signal_sent = False
+        
+    def bind_audio_queue(self, queue: asyncio.Queue) -> None:
+        """Bind a new audio input queue."""
+        self._audio_input_queue = queue
+        
+    def bind_text_queue(self, queue: asyncio.Queue) -> None:
+        """Bind a new text output queue."""
+        self._text_output_queue = queue
     
     @property
     def is_connected(self) -> bool:

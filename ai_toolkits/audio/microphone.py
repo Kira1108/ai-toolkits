@@ -10,7 +10,7 @@ class MicrophoneClient:
         sampling_rate: int = 8000, 
         chunk_ms: int = 40, 
         channels: int = 1,
-        duration:int = 8):
+        duration:int = 30):
         
         self.audio_input_queue = audio_input_queue if audio_input_queue is not None else asyncio.Queue()
         self.sampling_rate = sampling_rate
@@ -25,6 +25,9 @@ class MicrophoneClient:
             rate=sampling_rate,
             input=True,
             frames_per_buffer=self.chunk_size)
+        
+    def bind_audio_queue(self, audio_input_queue: asyncio.Queue):
+        self.audio_input_queue = audio_input_queue
         
         
     async def receive_audio(self):

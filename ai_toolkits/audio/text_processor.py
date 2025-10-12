@@ -4,7 +4,10 @@ import asyncio
 logger = logging.getLogger(__name__)
 
 class PrintOutTextHandler:
-    def __init__(self, text_queue:asyncio.Queue):
+    def __init__(self, text_queue:asyncio.Queue = None):
+        self.text_queue = text_queue or asyncio.Queue()
+        
+    def bind_text_queue(self, text_queue:asyncio.Queue):
         self.text_queue = text_queue
         
     async def process_text(self):
