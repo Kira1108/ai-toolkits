@@ -1,26 +1,11 @@
 import logging
-logging.basicConfig(level=logging.INFO)
 from .microphone import MicrophoneClient
 from .tencent_asr import TencentASR
+from .text_processor import PrintOutTextHandler
 import asyncio
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
-
-async def consume_text_queue(queue: asyncio.Queue):
-    try:
-        while True:
-            try:
-                item = await asyncio.wait_for(queue.get(), timeout=1.0)
-                queue.task_done()
-            except asyncio.TimeoutError:
-                continue
-            except asyncio.CancelledError:
-                break
-            await asyncio.sleep(0.01)
-    except asyncio.CancelledError:
-        logger.info("Text queue consumer cancelled")
-        raise
-
 async def real_time_transcribe():
     """
     Real-time transcription workflow using microphone input and Tencent ASR.
@@ -35,17 +20,17 @@ async def real_time_transcribe():
     text_output_queue = asyncio.Queue()
     microphone_client = MicrophoneClient(audio_input_queue=audio_input_queue)
     asr_client = TencentASR(audio_input_queue=audio_input_queue, text_output_queue=text_output_queue)
-    
+    text_handler = PrintOutTextHandler(text_queue=text_output_queue)
     tasks = []
     
     try:
         await asr_client.connect()
         
         # Create tasks
-        record_task = asyncio.create_task(microphone_client.record())
+        record_task = asyncio.create_task(microphone_client.receive_audio())
         send_task = asyncio.create_task(asr_client.send_audio())
         receive_task = asyncio.create_task(asr_client.receive_results())
-        consume_task = asyncio.create_task(consume_text_queue(text_output_queue))
+        consume_task = asyncio.create_task(text_handler.process_text())
         
         tasks = [record_task, send_task, receive_task, consume_task]
         logger.info("Starting the workflow...")
@@ -149,3 +134,10 @@ async def real_time_transcribe():
             logger.warning(f"Error during disconnect: {e}")
 
         logger.info("Cleanup completed.")
+        
+@dataclass  
+class RealTimeTask:
+    audio_input_provider: str = "default"
+    audio_input_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    text_output_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    

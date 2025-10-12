@@ -27,7 +27,7 @@ class MicrophoneClient:
             frames_per_buffer=self.chunk_size)
         
         
-    async def record(self):
+    async def receive_audio(self):
         logger.info("Starting audio recording...")
         start = asyncio.get_event_loop().time()
         while self.stream.is_active():
