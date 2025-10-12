@@ -56,7 +56,7 @@ class ConversationHandler(BaseTextHandler):
         self.turns = 0
         
     async def do_process(self, text: str) -> str:
-        sep = f" Turn {self.turns} "
+        sep = f" Turn {self.turns + 1} "
         print(sep.center(80, "="))
         print(f"😏: {text}")
         self.conversation_history.append({"role": "user", "content": text})
@@ -85,7 +85,7 @@ class ConversationStreamHandler(BaseTextHandler):
         self.turns = 0
         
     async def do_process(self, text: str) -> str:
-        sep = f" Turn {self.turns} "
+        sep = f" Turn {self.turns + 1} "
         print(sep.center(80, "="))
         print(f"😏: {text}")
         self.conversation_history.append({"role": "user", "content": text})
