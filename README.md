@@ -7,3 +7,9 @@ OPENAI_API_KEY="your_openai_api_key"
 AZURE_OPENAI_API_KEY="your azure_openai_api_key"
 AZURE_OPENAI_ENDPOINT="your azure_openai_endpoint"
 ```
+
+
+2. Install project
+```
+pip install -r requirements.txt
+```
