@@ -25,3 +25,46 @@ class TranslateTextHandler(BaseTextHandler):
         )
         print(f"Translation: {translation.choices[0].message.content}")
         return translation.choices[0].message.content
+
+
+class ShortAnswerTextHandler(BaseTextHandler):
+    
+    def __init__(self, text_queue:asyncio.Queue = None):
+        super().__init__(text_queue)
+        self.client = create_async_client()
+        self.text_queue = text_queue
+        
+    async def do_process(self, text: str) -> str:
+        answer = await self.client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[{"role": "user", "content": f"Provide a concise answer to the following text: {text}, do not add any other explanations."}],
+        )
+        print(f"Short Answer: {answer.choices[0].message.content}")
+        return answer.choices[0].message.content
+    
+    
+class ConversationHandler(BaseTextHandler):
+    
+    def __init__(self, 
+                 text_queue:asyncio.Queue = None, 
+                 system_prompt: str = "You are a helpful assistant, You provide concise and colloquial style answers."
+                ):
+        super().__init__(text_queue)
+        self.client = create_async_client()
+        self.text_queue = text_queue
+        self.conversation_history = [{"role": "system", "content": system_prompt}]
+        self.turns = 0
+        
+    async def do_process(self, text: str) -> str:
+        self.conversation_history.append({"role": "user", "content": text})
+        response = await self.client.chat.completions.create(
+            model="gpt-4.1",
+            messages=self.conversation_history,
+        )
+        reply = response.choices[0].message.content
+        self.conversation_history.append({"role": "assistant", "content": reply})
+        sep = f" Turn {self.turns} "
+        print(sep.center(80, "="))
+        print(f"🤖 : {reply}")
+        self.turns += 1
+        return reply
