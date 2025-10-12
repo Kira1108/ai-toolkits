@@ -1,6 +1,6 @@
 import logging
 logging.basicConfig(level=logging.INFO)
-from ai_toolkits.audio.transcribe import RealTimeTask
+from ai_toolkits.audio.real_time import RealTimeTask
 from ai_toolkits.audio.text_processor import TranslateTextHandler
 import asyncio
 
