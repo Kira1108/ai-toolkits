@@ -70,3 +70,42 @@ class ConversationHandler(BaseTextHandler):
         print(f"🤖: {reply}")
         self.turns += 1
         return reply
+    
+    
+class ConversationStreamHandler(BaseTextHandler):
+    
+    def __init__(self, 
+                 text_queue:asyncio.Queue = None, 
+                 system_prompt: str = "You are a helpful assistant, You provide concise and colloquial style answers."
+                ):
+        super().__init__(text_queue)
+        self.client = create_async_client()
+        self.text_queue = text_queue
+        self.conversation_history = [{"role": "system", "content": system_prompt}]
+        self.turns = 0
+        
+    async def do_process(self, text: str) -> str:
+        sep = f" Turn {self.turns} "
+        print(sep.center(80, "="))
+        print(f"😏: {text}")
+        self.conversation_history.append({"role": "user", "content": text})
+        try:
+            # Try streaming if supported by the client
+            stream = await self.client.chat.completions.create(
+                model="gpt-4.1",
+                messages=self.conversation_history,
+                stream=True,
+            )
+            print("🤖: ", end="", flush=True)
+            buffer = ""
+            async for chunk in stream:
+                if hasattr(chunk, "choices") and len(chunk.choices) > 0:
+                    if hasattr(chunk.choices[0], "delta"):
+                        content = getattr(chunk.choices[0].delta, "content", "")
+                        if content:
+                            print(content, end="", flush=True)
+                            buffer += content
+            print()  # New line after completion
+            self.conversation_history.append({"role": "assistant", "content": buffer})
+        except Exception as e:
+            raise e
