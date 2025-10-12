@@ -7,7 +7,6 @@ from ai_toolkits.audio.text_processor import (
     ShortAnswerTextHandler,
     ConversationHandler
 )
-import asyncio
 
 
 if __name__ == "__main__": 
