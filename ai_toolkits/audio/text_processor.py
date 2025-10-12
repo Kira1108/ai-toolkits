@@ -2,7 +2,6 @@ import logging
 from .base import BaseTextHandler
 from ai_toolkits.llms.openai_provider import create_async_client
 import asyncio
-logger = logging.getLogger(__name__)
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):

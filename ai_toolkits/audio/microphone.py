@@ -29,7 +29,6 @@ class MicrophoneClient:
     def bind_audio_queue(self, audio_input_queue: asyncio.Queue):
         self.audio_input_queue = audio_input_queue
         
-        
     async def receive_audio(self):
         logger.info("Starting audio recording...")
         start = asyncio.get_event_loop().time()
