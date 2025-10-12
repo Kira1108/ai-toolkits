@@ -165,9 +165,15 @@ class TencentASR:
     @property
     def is_connected(self) -> bool:
         """Check if WebSocket is connected and ready."""
-        return (self._connection_state == ASRConnectionState.CONNECTED and 
-                self._websocket is not None and 
-                not self._websocket.closed)
+        if self._connection_state != ASRConnectionState.CONNECTED:
+            return False
+        if self._websocket is None:
+            return False
+        # Check if websocket is open (avoid using .closed which doesn't exist)
+        try:
+            return hasattr(self._websocket, 'send') and hasattr(self._websocket, 'recv')
+        except AttributeError:
+            return False
     
     @property
     def audio_input_queue(self) -> asyncio.Queue:
@@ -220,7 +226,8 @@ class TencentASR:
             return
             
         try:
-            if self._websocket and not self._websocket.closed:
+            if self._websocket:
+                # Don't check .closed attribute, just try to close
                 await self._websocket.close()
                 self._logger.info("ASR WebSocket connection closed")
         except Exception as e:
