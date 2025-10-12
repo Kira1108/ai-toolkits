@@ -14,11 +14,6 @@ class BaseSTT(Protocol):
     async def receive_results(self) -> None:
         ...
           
-# class BaseTextHandler(Protocol):
-#     async def process_text(self):
-#         ...
-        
-        
 class BaseTextHandler:
     
     def __init__(self, text_queue:asyncio.Queue = None):
