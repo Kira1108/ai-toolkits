@@ -18,4 +18,4 @@ if __name__ == "__main__":
         audio_input_provider=MicrophoneClient(duration=120),
         text_handler=conversation_handler
     )
-    asyncio.run(task.run())
+    task.run_app()

@@ -100,3 +100,6 @@ class RealTimeTask:
                 logger.warning(f"Error during disconnect: {e}")
             logger.info("Cleanup completed.")   
     
+    def run_app(self):
+        asyncio.run(self.run())
+    
