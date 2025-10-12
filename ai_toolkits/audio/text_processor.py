@@ -4,54 +4,25 @@ from ai_toolkits.llms.openai_provider import create_async_client
 import asyncio
 logger = logging.getLogger(__name__)
 
-class PrintOutTextHandler:
+class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
-        self.text_queue = text_queue or asyncio.Queue()
-        
-    def bind_text_queue(self, text_queue:asyncio.Queue):
-        self.text_queue = text_queue
-        
-    async def process_text(self):
-        try:
-            while True:
-                try:
-                    item = await asyncio.wait_for(self.text_queue.get(), timeout=1.0)
-                    print("Recognized:", item)
-                    self.text_queue.task_done()
-                except asyncio.TimeoutError:
-                    continue
-                except asyncio.CancelledError:
-                    break
-                await asyncio.sleep(0.01)
-        except asyncio.CancelledError:
-            logger.info("Text queue consumer cancelled")
-            raise
-        
-        
-class TranslateTextHandler:
+        super().__init__(text_queue)
+
+    async def do_process(self, text: str) -> str:
+        print(f"Transcription: {text}")
+        return text
+
+class TranslateTextHandler(BaseTextHandler):
+    
     def __init__(self, text_queue:asyncio.Queue = None):
-        self.text_queue = text_queue or asyncio.Queue()
+        super().__init__(text_queue)
         self.client = create_async_client()
-    def bind_text_queue(self, text_queue:asyncio.Queue):
         self.text_queue = text_queue
         
-    async def process_text(self):
-        try:
-            while True:
-                try:
-                    item = await asyncio.wait_for(self.text_queue.get(), timeout=1.0)
-                    translation = await self.client.chat.completions.create(
-                        model="gpt-4.1",    
-                        messages=[{"role": "user", "content": f"Translate the following text to English: {item}, do not add any other explanations."}],
-                    )
-                    translated = f"Translated: {translation.choices[0].message.content}"
-                    print("Translation:", translated)
-                    self.text_queue.task_done()
-                except asyncio.TimeoutError:
-                    continue
-                except asyncio.CancelledError:
-                    break
-                await asyncio.sleep(0.01)
-        except asyncio.CancelledError:
-            logger.info("Text queue consumer cancelled")
-            raise
+    async def do_process(self, text: str) -> str:
+        translation = await self.client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[{"role": "user", "content": f"Translate the following text to English: {text}, do not add any other explanations."}],
+        )
+        print(f"Translation: {translation.choices[0].message.content}")
+        return translation.choices[0].message.content
