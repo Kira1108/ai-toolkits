@@ -1,6 +1,8 @@
 import asyncio
 import pyaudio
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 class MicrophoneClient:
     def __init__(self,
@@ -23,18 +25,17 @@ class MicrophoneClient:
             rate=sampling_rate,
             input=True,
             frames_per_buffer=self.chunk_size)
-        print("Initialization down, stream opened")
+        
         
     async def record(self):
-        print("Starting to send audio")
+        logger.info("Starting audio recording...")
         start = asyncio.get_event_loop().time()
         while self.stream.is_active():
             if asyncio.get_event_loop().time() - start > self.duration:
-                print("Recording duration reached, stopping.")
+                logger.info("Recording duration reached, stopping.")
                 await self.audio_input_queue.put(json.dumps({"type": "end"}))
                 await asyncio.sleep(100)
             data = self.stream.read(self.chunk_size, exception_on_overflow=False)
             await self.audio_input_queue.put(data)
             await asyncio.sleep(0.01)
-        # await self.audio_input_queue.put(json.dumps({"type": "end"}))
         
