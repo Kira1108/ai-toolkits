@@ -56,6 +56,9 @@ class ConversationHandler(BaseTextHandler):
         self.turns = 0
         
     async def do_process(self, text: str) -> str:
+        sep = f" Turn {self.turns} "
+        print(sep.center(80, "="))
+        print(f"😏: {text}")
         self.conversation_history.append({"role": "user", "content": text})
         response = await self.client.chat.completions.create(
             model="gpt-4.1",
@@ -63,8 +66,7 @@ class ConversationHandler(BaseTextHandler):
         )
         reply = response.choices[0].message.content
         self.conversation_history.append({"role": "assistant", "content": reply})
-        sep = f" Turn {self.turns} "
-        print(sep.center(80, "="))
-        print(f"🤖 : {reply}")
+        
+        print(f"🤖: {reply}")
         self.turns += 1
         return reply
