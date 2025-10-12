@@ -109,3 +109,5 @@ class ConversationStreamHandler(BaseTextHandler):
             self.conversation_history.append({"role": "assistant", "content": buffer})
         except Exception as e:
             raise e
+        finally:
+            self.turns += 1
