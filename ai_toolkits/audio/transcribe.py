@@ -4,6 +4,8 @@ from .microphone import MicrophoneClient
 from .tencent_asr import TencentASR
 import asyncio
 
+logger = logging.getLogger(__name__)
+
 async def consume_text_queue(queue: asyncio.Queue):
     try:
         while True:
@@ -16,7 +18,7 @@ async def consume_text_queue(queue: asyncio.Queue):
                 break
             await asyncio.sleep(0.01)
     except asyncio.CancelledError:
-        logging.info("Text queue consumer cancelled")
+        logger.info("Text queue consumer cancelled")
         raise
 
 async def real_time_transcribe():
@@ -46,7 +48,7 @@ async def real_time_transcribe():
         consume_task = asyncio.create_task(consume_text_queue(text_output_queue))
         
         tasks = [record_task, send_task, receive_task, consume_task]
-        logging.info("Starting the workflow...")
+        logger.info("Starting the workflow...")
 
         # Wait until the first task completes (either exception or completion)
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -57,20 +59,20 @@ async def real_time_transcribe():
             exc = task.exception()
             if exc is not None:
                 first_exc = exc
-                logging.error(f"Task {task.get_name()} raised an exception: {exc}")
+                logger.error(f"Task {task.get_name()} raised an exception: {exc}")
                 break
 
         # If no exception, this means a task completed successfully (likely receive_task got final result)
         if first_exc is None:
-            logging.info("A task completed successfully, initiating graceful shutdown...")
+            logger.info("A task completed successfully, initiating graceful shutdown...")
             
             # Step 1: Stop recording first
             if not record_task.done():
                 record_task.cancel()
-                logging.info("Stopped recording")
+                logger.info("Stopped recording")
             
             # Step 2: Send end signal and wait for final result
-            logging.info("Sending end signal to ASR service...")
+            logger.info("Sending end signal to ASR service...")
             await asr_client.send_end_signal()
             
             # Step 3: Wait for send and receive tasks to complete
@@ -78,25 +80,25 @@ async def real_time_transcribe():
                 await send_task
             if not receive_task.done():
                 await receive_task
-            logging.info("ASR tasks completed")
+            logger.info("ASR tasks completed")
             
             # Step 4: Wait for queues to be empty
-            logging.info("Waiting for queues to be processed...")
+            logger.info("Waiting for queues to be processed...")
             await audio_input_queue.join()
             await text_output_queue.join()
-            logging.info("All queues processed")
-            
+            logger.info("All queues processed")
+
             # Step 5: Cancel consume task
             consume_task.cancel()
             try:
                 await consume_task
             except asyncio.CancelledError:
                 pass
-            logging.info("Text consumer stopped")
+            logger.info("Text consumer stopped")
             
         else:
             # If there was an exception, cancel all pending tasks
-            logging.error("Exception occurred, cancelling remaining tasks...")
+            logger.error("Exception occurred, cancelling remaining tasks...")
             for task in pending:
                 task.cancel()
             
@@ -106,11 +108,11 @@ async def real_time_transcribe():
             
             raise first_exc
 
-        logging.info("Workflow completed successfully.")
+        logger.info("Workflow completed successfully.")
         
     except KeyboardInterrupt:
-        logging.info("KeyboardInterrupt received, initiating graceful shutdown...")
-        
+        logger.info("KeyboardInterrupt received, initiating graceful shutdown...")
+
         # Step 1: Stop recording
         if not record_task.done():
             record_task.cancel()
@@ -119,7 +121,7 @@ async def real_time_transcribe():
         try:
             await asr_client.send_end_signal()
         except Exception as e:
-            logging.warning(f"Error sending end signal: {e}")
+            logger.warning(f"Error sending end signal: {e}")
         
         # Step 3: Cancel remaining tasks
         for task in tasks:
@@ -127,7 +129,7 @@ async def real_time_transcribe():
                 task.cancel()
         
     except Exception as e:
-        logging.error(f"Unexpected error in workflow: {e}")
+        logger.error(f"Unexpected error in workflow: {e}")
         # Cancel all tasks on unexpected error
         for task in tasks:
             if not task.done():
@@ -142,8 +144,8 @@ async def real_time_transcribe():
         # Step 4: Disconnect from ASR service
         try:
             await asr_client.disconnect()
-            logging.info("Disconnected from ASR service")
+            logger.info("Disconnected from ASR service")
         except Exception as e:
-            logging.warning(f"Error during disconnect: {e}")
-        
-        logging.info("Cleanup completed.")
+            logger.warning(f"Error during disconnect: {e}")
+
+        logger.info("Cleanup completed.")
