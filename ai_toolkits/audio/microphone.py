@@ -8,7 +8,7 @@ class MicrophoneClient:
         sampling_rate: int = 8000, 
         chunk_ms: int = 40, 
         channels: int = 1,
-        duration:int = 10):
+        duration:int = 8):
         
         self.audio_input_queue = audio_input_queue if audio_input_queue is not None else asyncio.Queue()
         self.sampling_rate = sampling_rate
@@ -32,10 +32,9 @@ class MicrophoneClient:
             if asyncio.get_event_loop().time() - start > self.duration:
                 print("Recording duration reached, stopping.")
                 await self.audio_input_queue.put(json.dumps({"type": "end"}))
-                await asyncio.sleep(5)
-                break
+                await asyncio.sleep(100)
             data = self.stream.read(self.chunk_size, exception_on_overflow=False)
             await self.audio_input_queue.put(data)
             await asyncio.sleep(0.01)
-        await self.audio_input_queue.put(json.dumps({"type": "end"}))
+        # await self.audio_input_queue.put(json.dumps({"type": "end"}))
         
