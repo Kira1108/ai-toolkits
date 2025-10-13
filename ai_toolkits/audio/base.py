@@ -36,6 +36,7 @@ class BaseTextHandler:
                     end_call = "再见" in processed or "拜" in processed
                     if end_call:
                         print("Detected end call phrase, stopping processing.")
+                        self.text_queue.task_done()
                         break
                     self.logger.info(f"Processed text: {processed}")
                     self.text_queue.task_done()
