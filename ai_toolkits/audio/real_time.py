@@ -26,11 +26,13 @@ class RealTimeTask:
         await self.stt_service.connect()
         tasks = []
         try:
+            print("Preparing to start...")
             record_task = asyncio.create_task(self.audio_input_provider.receive_audio())
             send_task = asyncio.create_task(self.stt_service.send_audio())
             receive_task = asyncio.create_task(self.stt_service.receive_results())
             consume_task = asyncio.create_task(self.text_handler.process_text())
             tasks = [record_task, send_task, receive_task, consume_task]
+            print("Start speaking now...")
             
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             first_exc = None
