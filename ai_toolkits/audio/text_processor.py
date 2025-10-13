@@ -113,6 +113,9 @@ class ConversationStreamHandler(BaseTextHandler):
         self.console = Console()
         
     async def do_process(self, text: str) -> bool:
+        from rich.live import Live
+        from rich.align import Align
+        import time
         # Beautiful user message in a panel
         user_panel = Panel(
             text, 
@@ -122,7 +125,7 @@ class ConversationStreamHandler(BaseTextHandler):
             padding=(0, 1)
         )
         self.console.print(user_panel)
-        
+
         self.conversation_history.append({"role": "user", "content": text})
         try:
             # Try streaming if supported by the client
@@ -132,19 +135,20 @@ class ConversationStreamHandler(BaseTextHandler):
                 stream=True,
                 extra_body=self.extra_body
             )
-            
-            # Collect streaming content first, then display in panel
+
             buffer = ""
-            self.console.print("\n[bold blue]🤖 Assistant is thinking...[/bold blue]")
-            
-            async for chunk in stream:
-                if hasattr(chunk, "choices") and len(chunk.choices) > 0:
-                    if hasattr(chunk.choices[0], "delta"):
-                        content = getattr(chunk.choices[0].delta, "content", "")
-                        if content:
-                            buffer += content
-            
-            # Display the complete response in a beautiful panel
+            # Use Live to update the streaming output in place
+            with Live(Align("", align="left"), console=self.console, refresh_per_second=10, transient=True) as live:
+                async for chunk in stream:
+                    if hasattr(chunk, "choices") and len(chunk.choices) > 0:
+                        if hasattr(chunk.choices[0], "delta"):
+                            content = getattr(chunk.choices[0].delta, "content", "")
+                            if content:
+                                buffer += content
+                                # Show streaming text in a panel as it grows
+                                live.update(Panel(buffer, title="🤖 Assistant (streaming)", title_align="left", border_style="blue", padding=(0, 1)))
+
+            # After streaming, clear and print the final result in a beautiful panel
             assistant_panel = Panel(
                 buffer, 
                 title="🤖 Assistant", 
@@ -153,9 +157,9 @@ class ConversationStreamHandler(BaseTextHandler):
                 padding=(0, 1)
             )
             self.console.print(assistant_panel)
-            
+
             self.conversation_history.append({"role": "assistant", "content": buffer})
-            
+
             return buffer
         except Exception as e:
             raise e
