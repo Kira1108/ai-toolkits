@@ -28,11 +28,20 @@ class BaseTextHandler:
         raise NotImplementedError("Subclasses must implement this method")
         
     async def process_text(self):
+        buffer = ""
         try:
             while True:
                 try:
                     item = await asyncio.wait_for(self.text_queue.get(), timeout=1.0)
-                    processed = await self.do_process(item)
+                    text_queue_empty = self.text_queue.empty()
+                    if not text_queue_empty:
+                        buffer += item
+                        self.text_queue.task_done()
+                        continue
+                    
+                    buffer += item
+                    processed = await self.do_process(buffer)
+                    buffer = ""
                     end_call = "再见" in processed or "拜" in processed
                     if end_call:
                         print("Detected end call phrase, stopping processing.")

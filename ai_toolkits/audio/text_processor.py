@@ -209,7 +209,7 @@ class SpeakOutStreamHandler(BaseTextHandler):
         self.extra_body = extra_body
         
     async def do_process(self, text: str) -> bool:
-
+        print(f"Answering user query {text}...")
         self.conversation_history.append({"role": "user", "content": text})
         try:
             # Try streaming if supported by the client
@@ -243,16 +243,12 @@ class SpeakOutStreamHandler(BaseTextHandler):
                 if content and (content in puncts) and len(buffer.strip()) > 5:
                     to_speak = buffer.strip()
                     if to_speak:
-                        # Run speak_mac in a separate thread to avoid blocking
-                        
-                        with concurrent.futures.ThreadPoolExecutor() as executor:
-                            executor.submit(speak_mac, to_speak)
+                        # Use asyncio.to_thread for non-blocking TTS
+                        await asyncio.to_thread(speak_mac, to_speak)
                     buffer = ""
-            
             # Speak any remaining buffer content at the end
             if buffer.strip():
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    executor.submit(speak_mac, buffer.strip())
+                await asyncio.to_thread(speak_mac, buffer.strip())
                 
             # Fix: Add complete_reply to conversation history, not buffer
             self.conversation_history.append({"role": "assistant", "content": complete_reply})
