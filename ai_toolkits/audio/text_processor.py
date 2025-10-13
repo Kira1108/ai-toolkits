@@ -161,7 +161,7 @@ class ConversationStreamHandler(BaseTextHandler):
                     content = getattr(chunk.choices[0].delta, "content", "")
                     if not content:
                         continue
-                    
+                    await asyncio.sleep(0.01)
                     # Update buffer and display
                     buffer += content
                     display_text = Text(buffer, overflow='fold', no_wrap=False)
