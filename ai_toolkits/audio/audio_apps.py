@@ -5,7 +5,8 @@ from ai_toolkits.audio.text_processor import (
     TranslateTextHandler, 
     ShortAnswerTextHandler,
     ConversationHandler,
-    ConversationStreamHandler
+    ConversationStreamHandler,
+    SpeakOutStreamHandler
 )
 from openai import AsyncClient
 
@@ -85,5 +86,23 @@ def create_streaming_conversation_bot_qwen3(
         text_handler=conversation_handler,
         stt_service=TencentASR(vad_silence=1800),
         trace_conversation=create_trace
+    )
+    return task
+
+def create_siri_bot(
+    system_prmopt:str = None, 
+    duration_seconds: int = 120) -> RealTimeTask:
+    
+    if system_prmopt is None:
+        system_prmopt = "You are a helpful assistant, You provide concise and colloquial style answers."
+        
+    
+    conversation_handler = SpeakOutStreamHandler(system_prompt=system_prmopt)
+    
+    task = RealTimeTask(
+        audio_input_provider=MicrophoneClient(duration=duration_seconds),
+        text_handler=conversation_handler,
+        stt_service=TencentASR(vad_silence=1000),
+        trace_conversation=False
     )
     return task

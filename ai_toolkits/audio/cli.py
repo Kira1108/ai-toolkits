@@ -1,6 +1,7 @@
 import click
 from ai_toolkits.audio.audio_apps import create_streaming_conversation_bot
 from ai_toolkits.audio.audio_apps import create_translator
+from ai_toolkits.audio.audio_apps import create_siri_bot
 
 @click.group()
 def cli():
@@ -19,4 +20,10 @@ def chat(duration):
 def translate():
     """Starts the translator bot."""
     bot = create_translator()
+    bot.run_app()
+    
+@cli.command()
+def siri():
+    """Starts the Siri bot."""
+    bot = create_siri_bot()
     bot.run_app()

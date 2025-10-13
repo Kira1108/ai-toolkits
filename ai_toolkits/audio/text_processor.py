@@ -5,6 +5,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
 from rich.text import Text
+import subprocess
+import string
+import concurrent.futures
+
+def speak_mac(text):
+    subprocess.call(['say', text])
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
@@ -175,6 +181,83 @@ class ConversationStreamHandler(BaseTextHandler):
             self.conversation_history.append({"role": "assistant", "content": buffer})
 
             return buffer
+        except Exception as e:
+            raise e
+        finally:
+            self.turns += 1
+            
+            
+
+class SpeakOutStreamHandler(BaseTextHandler):
+    
+    def __init__(self, 
+                 text_queue:asyncio.Queue = None, 
+                 system_prompt: str = "You are a helpful assistant, You provide concise and colloquial style answers.",
+                 async_client = None,
+                 extra_body:dict = None
+                ):
+        super().__init__(text_queue)
+        
+        if async_client is None:
+            self.client = create_async_client()
+        else:
+            self.client = async_client
+            
+        self.text_queue = text_queue
+        self.conversation_history = [{"role": "system", "content": system_prompt}]
+        self.turns = 0
+        self.extra_body = extra_body
+        
+    async def do_process(self, text: str) -> bool:
+
+        self.conversation_history.append({"role": "user", "content": text})
+        try:
+            # Try streaming if supported by the client
+            stream = await self.client.chat.completions.create(
+                model="gpt-4.1",
+                messages=self.conversation_history,
+                stream=True,
+                extra_body=self.extra_body
+            )
+
+            complete_reply = ""
+            buffer = ""
+            async for chunk in stream:
+                # Extract content with early returns to avoid nested ifs
+                if not (hasattr(chunk, "choices") and len(chunk.choices) > 0):
+                    continue
+                
+                if not hasattr(chunk.choices[0], "delta"):
+                    continue
+                
+                content = getattr(chunk.choices[0].delta, "content", "")
+                if not content:
+                    continue
+                
+                # Update buffer and complete reply
+                buffer += content
+                complete_reply += content
+                
+                # if content is a punctuation, speak out the buffer
+                puncts = {',', '!', '?', '.', '。', '…', '...'}
+                if content and (content in puncts) and len(buffer.strip()) > 5:
+                    to_speak = buffer.strip()
+                    if to_speak:
+                        # Run speak_mac in a separate thread to avoid blocking
+                        
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            executor.submit(speak_mac, to_speak)
+                    buffer = ""
+            
+            # Speak any remaining buffer content at the end
+            if buffer.strip():
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    executor.submit(speak_mac, buffer.strip())
+                
+            # Fix: Add complete_reply to conversation history, not buffer
+            self.conversation_history.append({"role": "assistant", "content": complete_reply})
+
+            return complete_reply
         except Exception as e:
             raise e
         finally:
