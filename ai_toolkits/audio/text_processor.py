@@ -1,13 +1,10 @@
-import logging
 from .base import BaseTextHandler
 from ai_toolkits.llms.openai_provider import create_async_client
 import asyncio
 from rich.console import Console
 from rich.panel import Panel
 from rich.live import Live
-from rich.align import Align
 from rich.text import Text
-import time
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
@@ -139,7 +136,14 @@ class ConversationStreamHandler(BaseTextHandler):
 
             buffer = ""
             panel_title = "🤖 Assistant (streaming)"
-            with Live(Panel("", title=panel_title, title_align="left", border_style="blue", padding=(0, 1)), console=self.console, refresh_per_second=10, transient=True) as live:
+            with Live(Panel("", 
+                            title=panel_title, 
+                            title_align="left", 
+                            border_style="blue", 
+                            padding=(0, 1)), 
+                      console=self.console, 
+                      refresh_per_second=10, 
+                      transient=True) as live:
                 async for chunk in stream:
                     # Extract content with early returns to avoid nested ifs
                     if not (hasattr(chunk, "choices") and len(chunk.choices) > 0):
