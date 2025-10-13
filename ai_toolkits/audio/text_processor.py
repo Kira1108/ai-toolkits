@@ -2,6 +2,8 @@ import logging
 from .base import BaseTextHandler
 from ai_toolkits.llms.openai_provider import create_async_client
 import asyncio
+from rich.console import Console
+from rich.panel import Panel
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
@@ -54,11 +56,19 @@ class ConversationHandler(BaseTextHandler):
         self.text_queue = text_queue
         self.conversation_history = [{"role": "system", "content": system_prompt}]
         self.turns = 0
+        self.console = Console()
         
     async def do_process(self, text: str) -> str:
-        sep = f" Turn {self.turns + 1} "
-        print(sep.center(80, "="))
-        print(f"😏: {text}")
+        # Beautiful user message in a panel
+        user_panel = Panel(
+            text, 
+            title="😊 User", 
+            title_align="left",
+            border_style="green",
+            padding=(0, 1)
+        )
+        self.console.print(user_panel)
+        
         self.conversation_history.append({"role": "user", "content": text})
         response = await self.client.chat.completions.create(
             model="gpt-4.1",
@@ -67,7 +77,16 @@ class ConversationHandler(BaseTextHandler):
         reply = response.choices[0].message.content
         self.conversation_history.append({"role": "assistant", "content": reply})
         
-        print(f"🤖: {reply}")
+        # Beautiful assistant message in a panel
+        assistant_panel = Panel(
+            reply, 
+            title="🤖 Assistant", 
+            title_align="left",
+            border_style="blue",
+            padding=(0, 1)
+        )
+        self.console.print(assistant_panel)
+        
         self.turns += 1
         return reply
     
@@ -91,15 +110,19 @@ class ConversationStreamHandler(BaseTextHandler):
         self.conversation_history = [{"role": "system", "content": system_prompt}]
         self.turns = 0
         self.extra_body = extra_body
+        self.console = Console()
         
     async def do_process(self, text: str) -> bool:
-        # Simpler, beautiful turn separator
-        turn_num = self.turns + 1
-        sep = f"🟦 Turn {turn_num} 🟦"
-        print(f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
-        print(f"┃ {sep.center(42)} ┃")
-        print(f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n")
-        print(f"😏 User: {text}")
+        # Beautiful user message in a panel
+        user_panel = Panel(
+            text, 
+            title="😊 User", 
+            title_align="left",
+            border_style="green",
+            padding=(0, 1)
+        )
+        self.console.print(user_panel)
+        
         self.conversation_history.append({"role": "user", "content": text})
         try:
             # Try streaming if supported by the client
@@ -109,16 +132,28 @@ class ConversationStreamHandler(BaseTextHandler):
                 stream=True,
                 extra_body=self.extra_body
             )
-            print("🤖 Assistant: ", end="", flush=True)
+            
+            # Collect streaming content first, then display in panel
             buffer = ""
+            self.console.print("\n[bold blue]🤖 Assistant is thinking...[/bold blue]")
+            
             async for chunk in stream:
                 if hasattr(chunk, "choices") and len(chunk.choices) > 0:
                     if hasattr(chunk.choices[0], "delta"):
                         content = getattr(chunk.choices[0].delta, "content", "")
                         if content:
-                            print(content, end="", flush=True)
                             buffer += content
-            print()  # New line after completion
+            
+            # Display the complete response in a beautiful panel
+            assistant_panel = Panel(
+                buffer, 
+                title="🤖 Assistant", 
+                title_align="left",
+                border_style="blue",
+                padding=(0, 1)
+            )
+            self.console.print(assistant_panel)
+            
             self.conversation_history.append({"role": "assistant", "content": buffer})
             
             return buffer
