@@ -141,13 +141,21 @@ class ConversationStreamHandler(BaseTextHandler):
             panel_title = "🤖 Assistant (streaming)"
             with Live(Panel("", title=panel_title, title_align="left", border_style="blue", padding=(0, 1)), console=self.console, refresh_per_second=10, transient=True) as live:
                 async for chunk in stream:
-                    if hasattr(chunk, "choices") and len(chunk.choices) > 0:
-                        if hasattr(chunk.choices[0], "delta"):
-                            content = getattr(chunk.choices[0].delta, "content", "")
-                            if content:
-                                buffer += content
-                                display_text = Text(buffer, overflow='fold', no_wrap=False)
-                                live.update(Panel(display_text, title=panel_title, title_align="left", border_style="blue", padding=(0, 1)))
+                    # Extract content with early returns to avoid nested ifs
+                    if not (hasattr(chunk, "choices") and len(chunk.choices) > 0):
+                        continue
+                    
+                    if not hasattr(chunk.choices[0], "delta"):
+                        continue
+                    
+                    content = getattr(chunk.choices[0].delta, "content", "")
+                    if not content:
+                        continue
+                    
+                    # Update buffer and display
+                    buffer += content
+                    display_text = Text(buffer, overflow='fold', no_wrap=False)
+                    live.update(Panel(display_text, title=panel_title, title_align="left", border_style="blue", padding=(0, 1)))
             
             # After Live context ends, display a permanent final panel
             final_text = Text(buffer, overflow='fold', no_wrap=False)
