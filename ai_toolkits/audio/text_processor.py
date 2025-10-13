@@ -76,15 +76,23 @@ class ConversationStreamHandler(BaseTextHandler):
     
     def __init__(self, 
                  text_queue:asyncio.Queue = None, 
-                 system_prompt: str = "You are a helpful assistant, You provide concise and colloquial style answers."
+                 system_prompt: str = "You are a helpful assistant, You provide concise and colloquial style answers.",
+                 async_client = None,
+                 extra_body:dict = None
                 ):
         super().__init__(text_queue)
-        self.client = create_async_client()
+        
+        if async_client is None:
+            self.client = create_async_client()
+        else:
+            self.client = async_client
+            
         self.text_queue = text_queue
         self.conversation_history = [{"role": "system", "content": system_prompt}]
         self.turns = 0
+        self.extra_body = extra_body
         
-    async def do_process(self, text: str) -> str:
+    async def do_process(self, text: str) -> bool:
         # Simpler, beautiful turn separator
         turn_num = self.turns + 1
         sep = f"🟦 Turn {turn_num} 🟦"
@@ -99,6 +107,7 @@ class ConversationStreamHandler(BaseTextHandler):
                 model="gpt-4.1",
                 messages=self.conversation_history,
                 stream=True,
+                extra_body=self.extra_body
             )
             print("🤖 Assistant: ", end="", flush=True)
             buffer = ""
@@ -111,6 +120,8 @@ class ConversationStreamHandler(BaseTextHandler):
                             buffer += content
             print()  # New line after completion
             self.conversation_history.append({"role": "assistant", "content": buffer})
+            
+            return buffer
         except Exception as e:
             raise e
         finally:

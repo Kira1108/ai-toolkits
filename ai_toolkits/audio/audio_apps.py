@@ -54,3 +54,29 @@ def create_streaming_conversation_bot(
     )
     return task
 
+
+def create_streaming_conversation_bot_qwen3(
+    system_prmopt:str = None,
+    duration_seconds: int = 120,
+    extra_body: dict = None,
+    async_client = None
+    ) -> RealTimeTask:
+    
+    if extra_body is None:
+        extra_body = {
+            "chat_template_kwargs": {
+                "enable_thinking": False,
+                "separate_reasoning": True
+            }
+        }
+    conversation_handler = ConversationStreamHandler(
+        system_prompt=system_prmopt if system_prmopt else "You are a helpful assistant, You provide concise and colloquial style answers.",
+        extra_body=extra_body,
+        async_client=async_client
+    )
+    task = RealTimeTask(
+        audio_input_provider=MicrophoneClient(duration=duration_seconds),
+        text_handler=conversation_handler,
+        stt_service=TencentASR(vad_silence=1800)
+    )
+    return task

@@ -33,6 +33,10 @@ class BaseTextHandler:
                 try:
                     item = await asyncio.wait_for(self.text_queue.get(), timeout=1.0)
                     processed = await self.do_process(item)
+                    end_call = "再见" in processed or "拜" in processed
+                    if end_call:
+                        print("Detected end call phrase, stopping processing.")
+                        break
                     self.logger.info(f"Processed text: {processed}")
                     self.text_queue.task_done()
                 except asyncio.TimeoutError:
