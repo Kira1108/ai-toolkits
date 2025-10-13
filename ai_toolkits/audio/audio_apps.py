@@ -7,6 +7,7 @@ from ai_toolkits.audio.text_processor import (
     ConversationHandler,
     ConversationStreamHandler
 )
+from openai import AsyncClient
 
 def create_translator() -> RealTimeTask:
     translation_handler = TranslateTextHandler()
@@ -63,7 +64,8 @@ def create_streaming_conversation_bot_qwen3(
     system_prmopt:str = None,
     duration_seconds: int = 120,
     extra_body: dict = None,
-    async_client = None
+    async_client:AsyncClient = None,
+    create_trace:bool = True
     ) -> RealTimeTask:
     
     if extra_body is None:
@@ -82,6 +84,6 @@ def create_streaming_conversation_bot_qwen3(
         audio_input_provider=MicrophoneClient(duration=duration_seconds),
         text_handler=conversation_handler,
         stt_service=TencentASR(vad_silence=1800),
-        trace_conversation=False
+        trace_conversation=create_trace
     )
     return task
