@@ -4,6 +4,10 @@ from ai_toolkits.llms.openai_provider import create_async_client
 import asyncio
 from rich.console import Console
 from rich.panel import Panel
+from rich.live import Live
+from rich.align import Align
+from rich.text import Text
+import time
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
@@ -113,9 +117,6 @@ class ConversationStreamHandler(BaseTextHandler):
         self.console = Console()
         
     async def do_process(self, text: str) -> bool:
-        from rich.live import Live
-        from rich.align import Align
-        import time
         # Beautiful user message in a panel
         user_panel = Panel(
             text, 
@@ -137,26 +138,27 @@ class ConversationStreamHandler(BaseTextHandler):
             )
 
             buffer = ""
-            # Use Live to update the streaming output in place
-            with Live(Align("", align="left"), console=self.console, refresh_per_second=10, transient=True) as live:
+            panel_title = "🤖 Assistant (streaming)"
+            with Live(Panel("", title=panel_title, title_align="left", border_style="blue", padding=(0, 1)), console=self.console, refresh_per_second=10, transient=True) as live:
                 async for chunk in stream:
                     if hasattr(chunk, "choices") and len(chunk.choices) > 0:
                         if hasattr(chunk.choices[0], "delta"):
                             content = getattr(chunk.choices[0].delta, "content", "")
                             if content:
                                 buffer += content
-                                # Show streaming text in a panel as it grows
-                                live.update(Panel(buffer, title="🤖 Assistant (streaming)", title_align="left", border_style="blue", padding=(0, 1)))
-
-            # After streaming, clear and print the final result in a beautiful panel
-            assistant_panel = Panel(
-                buffer, 
+                                display_text = Text(buffer, overflow='fold', no_wrap=False)
+                                live.update(Panel(display_text, title=panel_title, title_align="left", border_style="blue", padding=(0, 1)))
+            
+            # After Live context ends, display a permanent final panel
+            final_text = Text(buffer, overflow='fold', no_wrap=False)
+            final_panel = Panel(
+                final_text, 
                 title="🤖 Assistant", 
-                title_align="left",
-                border_style="blue",
+                title_align="left", 
+                border_style="blue", 
                 padding=(0, 1)
             )
-            self.console.print(assistant_panel)
+            self.console.print(final_panel)
 
             self.conversation_history.append({"role": "assistant", "content": buffer})
 
