@@ -15,6 +15,7 @@ class RealTimeTask:
     stt_service: BaseSTT = field(default_factory=TencentASR)
     audio_input_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
     text_output_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    trace_conversation: bool = True
     
     def __post_init__(self):
         self.audio_input_provider.bind_audio_queue(self.audio_input_queue)
@@ -95,6 +96,14 @@ class RealTimeTask:
         finally:
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
+                
+            if hasattr(self.text_handler, "conversation_history") and self.trace_conversation:
+                import json
+                import uuid
+                import os
+                os.makedirs("trace", exist_ok=True)
+                with open(f"trace/conversation_history-{uuid.uuid4()}.json", "w", encoding="utf-8") as f:
+                    json.dump(self.text_handler.conversation_history, f, ensure_ascii=False, indent=4)
             try:
                 await self.stt_service.disconnect()
                 logger.info("Disconnected from STT service")

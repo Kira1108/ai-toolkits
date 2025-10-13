@@ -12,7 +12,8 @@ def create_translator() -> RealTimeTask:
     translation_handler = TranslateTextHandler()
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=120),
-        text_handler=translation_handler
+        text_handler=translation_handler,
+        trace_conversation=False
     )
     return task
 
@@ -20,7 +21,8 @@ def create_stateless_conversation_bot() -> RealTimeTask:
     short_answer_handler = ShortAnswerTextHandler()
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=120),
-        text_handler=short_answer_handler
+        text_handler=short_answer_handler,
+        trace_conversation=False
     )
     return task
 
@@ -33,7 +35,8 @@ def create_conversation_bot(system_prmopt:str = None) -> RealTimeTask:
     
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=120),
-        text_handler=conversation_handler
+        text_handler=conversation_handler,
+        trace_conversation=False
     )
     return task
 
@@ -50,7 +53,8 @@ def create_streaming_conversation_bot(
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=duration_seconds),
         text_handler=conversation_handler,
-        stt_service=TencentASR(vad_silence=1800)
+        stt_service=TencentASR(vad_silence=1800),
+        trace_conversation=False
     )
     return task
 
@@ -77,6 +81,7 @@ def create_streaming_conversation_bot_qwen3(
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=duration_seconds),
         text_handler=conversation_handler,
-        stt_service=TencentASR(vad_silence=1800)
+        stt_service=TencentASR(vad_silence=1800),
+        trace_conversation=False
     )
     return task
