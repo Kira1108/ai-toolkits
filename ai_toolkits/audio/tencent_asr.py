@@ -147,6 +147,7 @@ class TencentASR:
             text_output_queue: Queue for outgoing transcription results
             vad_silence: VAD silence threshold in milliseconds
         """
+        self._vad_silence = vad_silence
         self._websocket_url = _build_api_url(vad_silence)
         self._logger = logging.getLogger(__name__)
         
@@ -157,6 +158,9 @@ class TencentASR:
         # Connection management
         self._websocket: Optional[websockets.WebSocketServerProtocol] = None
         self._connection_state = ASRConnectionState.DISCONNECTED
+        
+        # Reconnection settings
+        self._max_reconnects = 3
         
         # Synchronization primitives
         self._final_result_received = asyncio.Event()
@@ -243,6 +247,18 @@ class TencentASR:
         finally:
             self._websocket = None
             self._connection_state = ASRConnectionState.DISCONNECTED
+    
+    async def _try_reconnect(self) -> bool:
+        """Try to reconnect with fresh URL."""
+        try:
+            await self.disconnect()
+            await asyncio.sleep(1)
+            self._websocket_url = _build_api_url(self._vad_silence)
+            await self.connect()
+            return True
+        except Exception as e:
+            self._logger.error(f"Reconnection failed: {e}")
+            return False
         
     async def send_audio_stream(self) -> None:
         """
@@ -252,6 +268,7 @@ class TencentASR:
         as binary messages to the ASR WebSocket. Handles end signals properly.
         """
         self._logger.info("Starting audio stream transmission")
+        reconnect_attempts = 0
         
         try:
             while self._connection_state == ASRConnectionState.CONNECTED:
@@ -271,7 +288,19 @@ class TencentASR:
                         
                 except (websockets.exceptions.ConnectionClosedError, 
                         websockets.exceptions.ConnectionClosedOK) as e:
-                    self._logger.warning(f"WebSocket closed during audio transmission: {e}")
+                    self._logger.warning(f"Connection lost during audio transmission: {e}")
+                    
+                    # Try to reconnect
+                    if reconnect_attempts < self._max_reconnects:
+                        reconnect_attempts += 1
+                        self._logger.info(f"Attempting reconnection {reconnect_attempts}/{self._max_reconnects}")
+                        
+                        if await self._try_reconnect():
+                            # Put the chunk back for retry
+                            await self._audio_input_queue.put(audio_chunk)
+                            continue
+                    
+                    self._logger.error("Max reconnection attempts reached or reconnection failed")
                     break
                 except Exception as e:
                     self._logger.error(f"Error sending audio chunk: {e}")
@@ -355,6 +384,7 @@ class TencentASR:
         Stops when final result is received or connection is closed.
         """
         self._logger.info("Starting to receive ASR results")
+        reconnect_attempts = 0
         
         try:
             while self._connection_state in (ASRConnectionState.CONNECTED, ASRConnectionState.ENDING):
@@ -366,7 +396,22 @@ class TencentASR:
                     message = await self._websocket.recv()
                 except (websockets.exceptions.ConnectionClosedOK,
                         websockets.exceptions.ConnectionClosedError) as e:
-                    self._logger.info(f"WebSocket connection closed: {e}")
+                    self._logger.warning(f"Connection lost during result reception: {e}")
+                    
+                    # Don't reconnect if we're in ENDING state
+                    if self._connection_state == ASRConnectionState.ENDING:
+                        self._logger.info("Connection closed during ending state, this is expected")
+                        break
+                    
+                    # Try to reconnect
+                    if reconnect_attempts < self._max_reconnects:
+                        reconnect_attempts += 1
+                        self._logger.info(f"Attempting reconnection {reconnect_attempts}/{self._max_reconnects}")
+                        
+                        if await self._try_reconnect():
+                            continue
+                    
+                    self._logger.error("Max reconnection attempts reached or reconnection failed")
                     break
                 
                 try:
