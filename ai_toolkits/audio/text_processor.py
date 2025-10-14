@@ -10,7 +10,7 @@ import string
 import concurrent.futures
 
 def speak_mac(text):
-    subprocess.call(['say', text])
+    subprocess.call(['say', text, "-r", "200", "-v", "Tingting"])
 
 class PrintOutTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
@@ -118,6 +118,10 @@ class ConversationStreamHandler(BaseTextHandler):
         self.turns = 0
         self.extra_body = extra_body
         self.console = Console()
+        self.do_cancel = asyncio.Event()
+        
+    async def cancel(self):
+        await self.do_cancel.set()
         
     async def do_process(self, text: str) -> bool:
         # Beautiful user message in a panel
@@ -150,7 +154,11 @@ class ConversationStreamHandler(BaseTextHandler):
                       console=self.console, 
                       refresh_per_second=10, 
                       transient=True) as live:
+                
                 async for chunk in stream:
+                    if self.do_cancel.is_set():
+                        break
+                    
                     # Extract content with early returns to avoid nested ifs
                     if not (hasattr(chunk, "choices") and len(chunk.choices) > 0):
                         continue
@@ -166,6 +174,9 @@ class ConversationStreamHandler(BaseTextHandler):
                     buffer += content
                     display_text = Text(buffer, overflow='fold', no_wrap=False)
                     live.update(Panel(display_text, title=panel_title, title_align="left", border_style="blue", padding=(0, 1)))
+            
+            if self.do_cancel.is_set():
+                self.do_cancel.clear()
             
             # After Live context ends, display a permanent final panel
             final_text = Text(buffer, overflow='fold', no_wrap=False)
