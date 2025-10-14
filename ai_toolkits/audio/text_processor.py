@@ -6,8 +6,6 @@ from rich.panel import Panel
 from rich.live import Live
 from rich.text import Text
 import subprocess
-import string
-import concurrent.futures
 
 def speak_mac(text):
     subprocess.call(['say', text, "-r", "200", "-v", "Tingting"])
