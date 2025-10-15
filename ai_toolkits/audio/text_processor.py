@@ -22,12 +22,19 @@ class PrintOutTextHandler(BaseTextHandler):
 class NotetalkingTextHandler(BaseTextHandler):
     def __init__(self, text_queue:asyncio.Queue = None):
         super().__init__(text_queue)
-    
         self.memory = []
+        self.console = Console()
 
     async def do_process(self, text: str) -> str:
         self.memory.append(text)
-        print(f"Transcription: {text}")
+        panel = Panel(
+            Text(text, style="bold white", overflow="fold"),
+            title="🎤 Transcription",
+            title_align="left",
+            border_style="magenta",
+            padding=(0, 1)
+        )
+        self.console.print(panel)
         return text
 
 class TranslateTextHandler(BaseTextHandler):
