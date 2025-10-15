@@ -6,7 +6,8 @@ from ai_toolkits.audio.text_processor import (
     ShortAnswerTextHandler,
     ConversationHandler,
     ConversationStreamHandler,
-    SpeakOutStreamHandler
+    SpeakOutStreamHandler,
+    NotetalkingTextHandler
 )
 from openai import AsyncClient
 
@@ -27,7 +28,18 @@ def create_stateless_conversation_bot() -> RealTimeTask:
         trace_conversation=False
     )
     return task
+    
 
+def create_note_taking_bot(duration_seconds: int = 120) -> RealTimeTask:
+    handler = NotetalkingTextHandler()
+    task = RealTimeTask(
+        audio_input_provider=MicrophoneClient(duration=duration_seconds),
+        text_handler=handler
+    )
+    
+    return task
+    
+    
 def create_conversation_bot(system_prmopt:str = None) -> RealTimeTask:
     
     if system_prmopt is None:

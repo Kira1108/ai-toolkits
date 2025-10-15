@@ -17,6 +17,18 @@ class PrintOutTextHandler(BaseTextHandler):
     async def do_process(self, text: str) -> str:
         print(f"Transcription: {text}")
         return text
+        
+
+class NotetalkingTextHandler(BaseTextHandler):
+    def __init__(self, text_queue:asyncio.Queue = None):
+        super().__init__(text_queue)
+    
+        self.memory = []
+
+    async def do_process(self, text: str) -> str:
+        self.memory.append(text)
+        print(f"Transcription: {text}")
+        return text
 
 class TranslateTextHandler(BaseTextHandler):
     
