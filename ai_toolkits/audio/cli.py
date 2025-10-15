@@ -63,7 +63,8 @@ def note(duration:int = 120):
         print(f"Shut down service, note saved to {fp}... exit.")
 
     try:
-        bot = create_note_taking_bot(duration_seconds=duration)
+        bot = create_note_taking_bot(
+            duration_seconds=duration)
         bot.run_app()
         save_memory(bot)
     except Exception as e:

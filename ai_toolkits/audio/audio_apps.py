@@ -34,7 +34,8 @@ def create_note_taking_bot(duration_seconds: int = 120) -> RealTimeTask:
     handler = NotetalkingTextHandler()
     task = RealTimeTask(
         audio_input_provider=MicrophoneClient(duration=duration_seconds),
-        text_handler=handler
+        text_handler=handler,
+        stt_service=TencentASR(vad_silence=2000),
     )
     
     return task
