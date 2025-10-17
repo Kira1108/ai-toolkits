@@ -10,3 +10,5 @@ pydantic-ai
 pymilvus
 PyAudio
 click
+markitdown[all]
+langchain-text-splitters

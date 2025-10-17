@@ -55,6 +55,7 @@ async def acreate_object_openai_safe(
     try:
         return await acreate_object_openai(output_cls, prompt, client)
     except Exception as e:
+        print("Object Creation failed:", str(e))
         return ErrorResponse(error=str(e))
 
 
