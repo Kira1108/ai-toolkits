@@ -6,6 +6,7 @@ from ai_toolkits.audio.audio_apps import create_translator
 from ai_toolkits.audio.audio_apps import create_siri_bot
 from ai_toolkits.audio.audio_apps import create_note_taking_bot
 from ai_toolkits.llms.openai_provider import create_sync_client
+from ai_toolkits.files.parse import MarkDownFileReader
 
 @click.group()
 def cli():
@@ -18,6 +19,24 @@ def chat(duration):
     """Starts the streaming conversation bot."""
     bot = create_streaming_conversation_bot(duration_seconds=duration)
     bot.run_app()
+    
+    
+@cli.command()
+@click.argument('url')
+@click.option('--duration', default=300, help='Duration in seconds for the streaming bot.')
+def url(url, duration):
+    """Starts the streaming conversation bot."""
+    try:
+        content = MarkDownFileReader().read(url)
+        if content is None or len(content.strip()) == 0:
+            raise ValueError(f"Failed to read content from {url}")
+        system_prompt = f"The following is a document content:\n{content}\nBased on this document, answer the user's questions concisely."
+        bot = create_streaming_conversation_bot(duration_seconds=duration, system_prmopt=system_prompt)
+        bot.run_app()
+    except Exception as e:
+        print(f"Error reading from URL {url}: {e}")
+        return
+    
 
 
 @cli.command()
